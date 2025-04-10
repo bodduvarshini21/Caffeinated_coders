@@ -12,9 +12,15 @@ class Story(BaseModel):
 async def upload_file(file: UploadFile = File(...)):
     contents = await file.read()
     df = pd.read_csv(StringIO(contents.decode('utf-8')))
-    user_stories = df['UserStory'].tolist()
+    print("Uploaded CSV Columns:", df.columns)  # Debug: Print column names
+    print("Uploaded CSV Data:", df.head())  # Debug: Print first few rows
 
-    # Return user stories to the frontend
+    # Check if the required column exists
+    if 'Title' not in df.columns:
+        return {"error": "The uploaded file must contain a 'Title' column."}
+
+    # Use the 'Title' column as user stories
+    user_stories = df['Title'].tolist()
     return {"userStories": user_stories}
 
 @router.post("/api/analyze")
@@ -22,8 +28,7 @@ async def analyze_story(story: Story):
     selected_story = story.story
 
     # Load user stories from a persistent storage or in-memory storage
-    # For simplicity, let's assume we have the user stories in a list
-    user_stories = ["User story 1", "User story 2", "User story 3"]
+    user_stories = ["User story 1", "User story 2", "User story 3"]  # Replace with actual user stories
 
     # NLP Analysis
     import spacy
@@ -42,11 +47,14 @@ async def analyze_story(story: Story):
     selected_index = user_stories.index(selected_story)
     impact_scores = cosine_sim[selected_index]
 
-    # Create relationships based on impact scores
+    # Create relationships with similarity percentages
     relationships = []
     for i, score in enumerate(impact_scores):
-        if i != selected_index and score > 0.5:  # Threshold for similarity
-            relationships.append({"source": selected_index + 1, "target": i + 1})
+        if i != selected_index:  # Exclude the selected story itself
+            relationships.append({
+                "source": selected_index + 1,
+                "target": i + 1,
+                "similarity": round(score * 100, 2)  # Convert to percentage
+            })
 
     return {"userStories": user_stories, "relationships": relationships}
-   

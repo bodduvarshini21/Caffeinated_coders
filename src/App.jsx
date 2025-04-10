@@ -39,7 +39,19 @@ const App = () => {
           </ul>
         </div>
       )}
-      {impactData && <UserStoryGraph data={impactData} />}
+      {impactData && (
+        <div>
+          <h3>Impact Analysis for: {selectedStory}</h3>
+          <ul>
+            {impactData.relationships.map((rel, index) => (
+              <li key={index}>
+                Related to: {impactData.userStories[rel.target - 1]} - Similarity: {rel.similarity}%
+              </li>
+            ))}
+          </ul>
+          <UserStoryGraph data={impactData} />
+        </div>
+      )}
     </div>
   );
 };
